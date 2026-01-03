@@ -2,7 +2,7 @@
 // Enhanced ContentViewer Component with TypeScript, advanced rendering, and UX improvements
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { ContentViewerProps, MultimodalContent, ContentItem } from '../types';
+import { ContentViewerProps, MultimodalContent } from '../types';
 import './ContentViewer.css';
 
 const ContentViewer: React.FC<ContentViewerProps> = ({ 

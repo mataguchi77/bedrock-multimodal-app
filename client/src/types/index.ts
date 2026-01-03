@@ -16,11 +16,11 @@ export interface QueryResponse {
 }
 
 export interface MultimodalContent {
-  text: TextContent[];
-  images: ImageContent[];
-  videos: VideoContent[];
-  documents: DocumentContent[];
-  metadata: ContentMetadata;
+  text?: (string | TextContent)[];
+  images?: (string | ImageContent)[];
+  videos?: (string | VideoContent)[];
+  documents?: (string | DocumentContent)[];
+  metadata?: ContentMetadata;
 }
 
 export interface TextContent {
@@ -58,6 +58,14 @@ export interface ContentMetadata {
   processingTime: number;
   source: string;
   confidence?: number;
+}
+
+export interface ContentItem {
+  type: 'text' | 'image' | 'video' | 'document';
+  content: string;
+  url?: string;
+  alt?: string;
+  title?: string;
 }
 
 export interface TextFormatting {
