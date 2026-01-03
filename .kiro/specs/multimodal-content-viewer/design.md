@@ -2,9 +2,9 @@
 
 ## Overview
 
-The Multimodal Content Viewer is a full-stack web application built with React.js frontend and Node.js backend that integrates with AWS Bedrock Agent and Knowledge Base services. The system enables users to submit natural language queries through a web interface and receive rich, multimodal content responses that are parsed and visualized in the browser.
+The Multimodal Content Viewer is a full-stack web application built with React.js frontend and Node.js backend that integrates with AWS Bedrock Agent through AWS AgentCore Gateway. The system enables users to submit natural language queries through a web interface and receive rich, multimodal content responses that are parsed and visualized in the browser.
 
-The architecture follows a client-server pattern with clear separation of concerns: the React frontend handles user interaction and content presentation, while the Node.js backend manages AWS service integration, authentication, and data processing.
+The architecture follows a client-server pattern with clear separation of concerns: the React frontend handles user interaction and content presentation, while the Node.js backend manages AgentCore Gateway integration, Cognito authentication, and data processing.
 
 ## Architecture
 
@@ -12,7 +12,10 @@ The architecture follows a client-server pattern with clear separation of concer
 graph TB
     User[User Browser] --> Frontend[React.js Frontend]
     Frontend --> Backend[Node.js Backend]
-    Backend --> Bedrock[AWS Bedrock Agent]
+    Backend --> Auth[Cognito OAuth]
+    Backend --> Gateway[AgentCore Gateway]
+    Gateway --> Lambda[Lambda Function]
+    Lambda --> Bedrock[AWS Bedrock Agent]
     Bedrock --> KB[AWS Knowledge Base]
     
     subgraph "Frontend Components"
@@ -23,8 +26,17 @@ graph TB
     
     subgraph "Backend Services"
         APIServer[Express API Server]
-        BedrockClient[Bedrock Client]
+        AuthService[Auth Service]
+        BedrockClient[Gateway Client]
         ContentProcessor[Content Processor]
+    end
+    
+    subgraph "AWS Infrastructure"
+        Cognito[AWS Cognito]
+        AgentCoreGW[AgentCore Gateway]
+        LambdaFunc[Lambda Function]
+        BedrockAgent[Bedrock Agent]
+        KnowledgeBase[Knowledge Base]
     end
     
     Frontend --> QueryInterface
@@ -32,19 +44,52 @@ graph TB
     Frontend --> SessionManager
     
     Backend --> APIServer
+    Backend --> AuthService
     Backend --> BedrockClient
     Backend --> ContentProcessor
+    
+    Auth --> Cognito
+    Gateway --> AgentCoreGW
+    AgentCoreGW --> LambdaFunc
+    LambdaFunc --> BedrockAgent
+    BedrockAgent --> KnowledgeBase
 ```
 
 ### System Flow
 
 1. User enters query in React frontend
 2. Frontend sends HTTP request to Node.js backend
-3. Backend authenticates and calls AWS Bedrock Agent
-4. Bedrock Agent queries Knowledge Base for relevant content
-5. Backend processes streaming response from Bedrock
-6. Backend returns structured response to frontend
-7. Frontend parses multimodal content and renders visualization
+3. Backend authenticates with Cognito OAuth (auto-refresh tokens)
+4. Backend calls AgentCore Gateway with OAuth Bearer token
+5. AgentCore Gateway authenticates request and forwards to Lambda
+6. Lambda function (with pre-configured Bedrock Agent ID/Alias) calls Bedrock Agent
+7. Bedrock Agent queries Knowledge Base for relevant multimodal content
+8. Response flows back through Lambda → Gateway → Backend
+9. Backend processes and structures the multimodal response
+10. Backend returns structured response to frontend
+11. Frontend parses multimodal content and renders visualization
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant Backend
+    participant Cognito
+    participant Gateway
+    participant Lambda
+    participant Bedrock
+
+    Backend->>Cognito: POST /oauth2/token (client_credentials)
+    Cognito->>Backend: access_token + expires_in
+    Backend->>Gateway: POST /mcp (Bearer token + query)
+    Gateway->>Gateway: Validate OAuth token
+    Gateway->>Lambda: Invoke with query payload
+    Lambda->>Bedrock: InvokeAgent (with configured Agent ID/Alias)
+    Bedrock->>Lambda: Streaming response
+    Lambda->>Gateway: Processed response
+    Gateway->>Backend: Multimodal content
+    Backend->>Backend: Parse and structure content
+```
 
 ## Components and Interfaces
 
@@ -86,25 +131,62 @@ graph TB
 - **Endpoints**:
   - `POST /api/invoke-agent`: Main query processing endpoint
   - `GET /api/health`: System health check
+  - `GET /api/token-info`: OAuth token status and debugging
   - `POST /api/session/new`: Create new session
   - `GET /api/session/:id`: Retrieve session information
-- **Middleware**: CORS, JSON parsing, error handling, request logging
+- **Middleware**: CORS, JSON parsing, error handling, request logging, performance monitoring
 
-#### Bedrock Client Service
-- **Purpose**: AWS Bedrock Agent integration and communication
+#### Auth Service
+- **Purpose**: Manages Cognito OAuth authentication and automatic token refresh
 - **Methods**:
-  - `invokeAgent(query, sessionId)`: Sends query to Bedrock Agent
-  - `processStreamingResponse()`: Handles real-time response processing
-  - `handleAuthentication()`: Manages AWS credential validation
+  - `getValidToken()`: Returns valid OAuth token (auto-refreshes if expired)
+  - `refreshToken()`: Obtains new token from Cognito using client credentials
+  - `getTokenInfo()`: Returns token status for debugging
+- **Features**:
+  - Automatic token refresh with 90% expiry safety margin
+  - Client credentials flow for server-to-server authentication
+  - Thread-safe token refresh to prevent concurrent requests
+
+#### Gateway Client Service
+- **Purpose**: AgentCore Gateway integration and communication
+- **Methods**:
+  - `invokeAgent(query, sessionId)`: Sends authenticated request to AgentCore Gateway
+  - `handleAuthentication()`: Manages OAuth token inclusion in requests
   - `retryWithBackoff()`: Implements retry logic for failed requests
+- **Authentication**: Uses Bearer token from AuthService for all gateway requests
+- **Endpoint**: Calls `/mcp` endpoint on AgentCore Gateway with JSON payload
 
 #### Content Processor Service
-- **Purpose**: Processes and structures multimodal responses
+- **Purpose**: Processes and structures multimodal responses from Lambda/Bedrock
 - **Methods**:
   - `parseMultimodalResponse()`: Identifies content types in response
   - `extractMediaReferences()`: Finds image, video, and document links
   - `formatTextContent()`: Applies proper text formatting and structure
   - `validateMediaUrls()`: Ensures media references are accessible
+  - `cacheContent()`: Implements response caching for performance
+
+### AWS Infrastructure Components
+
+#### AgentCore Gateway
+- **Purpose**: Managed gateway service providing secure access to Bedrock Agent
+- **Authentication**: Validates Cognito OAuth Bearer tokens
+- **Endpoint**: `/mcp` - accepts JSON payload with sessionId and inputText
+- **Features**: Built-in rate limiting, request validation, and error handling
+
+#### Lambda Function
+- **Purpose**: Serverless function that interfaces with Bedrock Agent
+- **Configuration**: Pre-configured with Bedrock Agent ID and Alias ID
+- **Environment Variables**:
+  - `BEDROCK_AGENT_ID`: The specific Bedrock Agent identifier
+  - `BEDROCK_AGENT_ALIAS_ID`: The agent alias for version management
+  - `AWS_REGION`: Region where Bedrock Agent is deployed
+- **Functionality**: Receives gateway requests and calls Bedrock Agent with configured parameters
+
+#### Cognito OAuth
+- **Purpose**: Provides OAuth 2.0 authentication for AgentCore Gateway access
+- **Grant Type**: Client Credentials flow for server-to-server authentication
+- **Token Endpoint**: `/oauth2/token`
+- **Configuration**: Client ID and Client Secret for application authentication
 
 ## Data Models
 
@@ -201,6 +283,72 @@ CREATE TABLE query_history (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+## Configuration
+
+### Environment Variables
+
+The application requires the following environment variables for proper operation:
+
+#### Required Configuration
+```env
+# AgentCore Gateway Configuration
+BEDROCK_AGENT_CORE_GATEWAY_URL=https://multimodal-agent-mkimw46b0u.gateway.bedrock-agentcore.ap-northeast-1.amazonaws.com/mcp
+
+# Cognito OAuth Configuration
+COGNITO_TOKEN_URL=https://your-domain.auth.region.amazoncognito.com/oauth2/token
+COGNITO_CLIENT_ID=your_client_id
+COGNITO_CLIENT_SECRET=your_client_secret
+
+# Application Configuration
+PORT=5000
+```
+
+#### Optional Configuration
+```env
+# OAuth Token (auto-managed by AuthService)
+OAUTH_TOKEN=auto_refreshed_token
+
+# Node.js Environment
+NODE_ENV=development
+```
+
+### AWS Infrastructure Requirements
+
+#### Lambda Function Configuration
+The Lambda function called by AgentCore Gateway must be configured with:
+```env
+# Lambda Environment Variables
+BEDROCK_AGENT_ID=your_agent_id
+BEDROCK_AGENT_ALIAS_ID=your_agent_alias_id
+AWS_REGION=ap-northeast-1
+```
+
+#### Cognito Configuration
+- **Grant Type**: Client Credentials
+- **Scopes**: As required by AgentCore Gateway
+- **Token Expiration**: Recommended 24 hours maximum
+- **Client Type**: Confidential client for server-to-server authentication
+
+#### AgentCore Gateway Configuration
+- **Authentication**: OAuth 2.0 Bearer token validation
+- **Endpoint**: `/mcp` accepting JSON payload
+- **Target**: Lambda function with Bedrock Agent integration
+- **CORS**: Configured for your domain if needed
+
+### Security Considerations
+
+#### Token Management
+- OAuth tokens are automatically refreshed by AuthService
+- Tokens are refreshed at 90% of expiry time for safety margin
+- Client credentials are stored securely in environment variables
+- No tokens are logged or exposed in responses
+
+#### Network Security
+- All communications use HTTPS
+- AgentCore Gateway provides built-in security features
+- Lambda function runs in secure AWS environment
+- No direct AWS credentials required in application
 
 ## Correctness Properties
 

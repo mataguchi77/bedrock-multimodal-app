@@ -15,6 +15,10 @@
   gap: 1rem;
 }
 
+.textarea-container {
+  position: relative;
+}
+
 .query-input {
   width: 100%;
   padding: 1rem;
@@ -22,23 +26,110 @@
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  resize: vertical;
+  resize: none;
   min-height: 80px;
-  transition: border-color 0.2s ease;
+  max-height: 200px;
+  transition: all 0.2s ease;
+  line-height: 1.5;
 }
 
 .query-input:focus {
   outline: none;
   border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.query-input.error {
+  border-color: #e53e3e;
+}
+
+.query-input.error:focus {
+  border-color: #e53e3e;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
 }
 
 .query-input:disabled {
   background-color: #f8f9fa;
   cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.query-input.loading {
+  background-color: #f8f9fa;
+}
+
+/* Character count indicator */
+.character-count {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.character-count.normal {
+  color: #6b7280;
+}
+
+.character-count.warning {
+  color: #d97706;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.character-count.error {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Validation error */
+.validation-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  margin-top: 0.5rem;
+}
+
+/* Button group */
+.button-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.clear-button {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-button:hover {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+.clear-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
 }
 
 .submit-button {
-  align-self: flex-end;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -49,6 +140,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .submit-button:hover:not(:disabled) {
@@ -56,22 +151,104 @@
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.submit-button:disabled {
+.submit-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+.submit-button:disabled,
+.submit-button.disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 .submit-button.loading {
   background: #6c757d;
+  cursor: wait;
 }
 
+/* Loading spinner */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Keyboard shortcuts help */
+.keyboard-shortcuts {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.keyboard-shortcuts small {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.keyboard-shortcuts kbd {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: #374151;
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
-  .input-group {
-    gap: 0.75rem;
+  .query-form {
+    padding: 1rem;
   }
   
+  .button-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .clear-button,
   .submit-button {
-    align-self: stretch;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .keyboard-shortcuts {
+    display: none;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .query-input,
+  .submit-button,
+  .clear-button,
+  .character-count {
+    transition: none;
+  }
+  
+  .loading-spinner {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .query-input {
+    border-width: 3px;
+  }
+  
+  .character-count {
+    background: white;
+    border: 1px solid currentColor;
   }
 }

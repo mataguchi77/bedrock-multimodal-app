@@ -153,6 +153,24 @@ app.get('/api/health', async (_req: Request, res: Response) => {
   }
 });
 
+// Token info endpoint for debugging
+app.get('/api/token-info', (_req: Request, res: Response) => {
+  try {
+    const tokenInfo = (bedrockClient as any).authService.getTokenInfo();
+    res.json({
+      success: true,
+      tokenInfo,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get token info',
+      timestamp: new Date()
+    });
+  }
+});
+
 // Main query processing endpoint
 app.post('/api/invoke-agent', validateInvokeAgentRequest, async (req: Request, res: Response) => {
   const startTime = Date.now();

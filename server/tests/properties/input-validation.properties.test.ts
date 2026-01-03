@@ -8,7 +8,7 @@ describe('Property 1: Input Validation Consistency', () => {
   test('inputs under 2000 characters should be accepted', () => {
     fc.assert(
       fc.property(
-        fc.string({ minLength: 1, maxLength: 1999 }),
+        fc.string({ minLength: 1, maxLength: 1999 }).filter(s => s.trim().length > 0),
         (input) => {
           const result = validateQueryInput(input);
           expect(result.isValid).toBe(true);

@@ -10,6 +10,7 @@
   padding: 2rem;
   text-align: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .App-header h1 {
@@ -23,6 +24,46 @@
   font-size: 1rem;
 }
 
+.session-info {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.session-id {
+  font-size: 0.875rem;
+  font-family: monospace;
+  opacity: 0.9;
+}
+
+.new-session-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.new-session-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.new-session-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
 .App-main {
   flex: 1;
   max-width: 1200px;
@@ -32,8 +73,18 @@
 }
 
 @media (max-width: 768px) {
+  .App-header {
+    padding: 1.5rem 1rem;
+  }
+  
   .App-header h1 {
     font-size: 1.5rem;
+  }
+  
+  .session-info {
+    position: static;
+    margin-top: 1rem;
+    justify-content: center;
   }
   
   .App-main {

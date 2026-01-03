@@ -1,18 +1,18 @@
 // Feature: multimodal-content-viewer
-// Type definitions for the Multimodal Content Viewer application
+// Frontend type definitions
 
 export interface QueryRequest {
   query: string;
   sessionId?: string;
-  metadata?: Record<string, any>;
 }
 
 export interface QueryResponse {
   success: boolean;
-  content?: string;
+  content?: MultimodalContent;
   sessionId: string;
   error?: string;
-  timestamp: Date;
+  timestamp: string;
+  processingTime?: number;
 }
 
 export interface MultimodalContent {
@@ -60,14 +60,6 @@ export interface ContentMetadata {
   confidence?: number;
 }
 
-export interface Session {
-  id: string;
-  createdAt: Date;
-  lastActivity: Date;
-  queryCount: number;
-  context: Record<string, any>;
-}
-
 export interface TextFormatting {
   bold?: boolean;
   italic?: boolean;
@@ -75,34 +67,25 @@ export interface TextFormatting {
   color?: string;
 }
 
-export interface ErrorResponse {
-  success: false;
-  error: string;
-  errorCode: string;
-  timestamp: Date;
-  sessionId?: string;
+export interface ValidationResult {
+  isValid: boolean;
+  error?: string;
 }
 
-// Remove BedrockAgentResponse since we're using API Gateway
-export interface ContentElement {
-  type: 'text' | 'image' | 'video' | 'document';
-  content: TextContent | ImageContent | VideoContent | DocumentContent;
-  position: number;
+// Component Props
+export interface QueryInterfaceProps {
+  onSubmit: (query: string) => void;
+  loading: boolean;
+  onClear?: () => void;
 }
 
-// Error types for structured error handling
-export type ErrorType = 
-  | 'AWS_AUTH_ERROR'
-  | 'NETWORK_TIMEOUT'
-  | 'CONTENT_PARSE_ERROR'
-  | 'VALIDATION_ERROR'
-  | 'SESSION_ERROR'
-  | 'BEDROCK_SERVICE_ERROR';
+export interface ContentViewerProps {
+  content: MultimodalContent | null;
+  loading: boolean;
+  error?: string | null;
+}
 
-export interface ErrorRecoveryStrategy {
-  retryable: boolean;
-  maxRetries: number;
-  backoffStrategy: 'linear' | 'exponential';
-  fallbackAction: 'display_error' | 'retry_with_fallback' | 'graceful_degradation';
-  userNotification: boolean;
+export interface SessionManagerProps {
+  onSessionChange: (sessionId: string) => void;
+  currentSessionId?: string;
 }
