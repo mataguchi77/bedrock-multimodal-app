@@ -4,19 +4,21 @@ A React.js and Node.js application that integrates with AWS Bedrock Agent and Kn
 
 ## Features
 
-- React frontend with clean, responsive UI
-- Node.js backend with AWS Bedrock integration
-- Multimodal content visualization (text, images, videos)
-- Session management for conversational queries
-- Real-time content rendering
+- **Enhanced React Frontend**: TypeScript components with input validation, real-time character counting, and multimodal content rendering
+- **Node.js Backend**: Express server with AgentCore Gateway integration and automatic OAuth token management
+- **Multimodal Content Visualization**: Support for text, images (with fullscreen zoom), videos, and documents
+- **Session Management**: Persistent conversation sessions with automatic recovery
+- **Error Handling**: Graceful error recovery with user-friendly messages
+- **Accessibility**: Full keyboard navigation and screen reader support
+- **Property-Based Testing**: Comprehensive testing framework with Fast-check integration
 
 ## Setup
 
 ### Prerequisites
 
 - Node.js (v16 or higher)
-- AWS account with Bedrock access
-- Configured AWS Bedrock Agent and Knowledge Base
+- AWS Bedrock AgentCore Gateway deployed
+- Cognito OAuth credentials (client ID and secret)
 
 ### Installation
 
@@ -31,14 +33,12 @@ cd server
 cp .env.example .env
 ```
 
-3. Update the `.env` file with your AWS credentials and Bedrock configuration:
+3. Update the `.env` file with your AgentCore Gateway configuration:
 ```
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-BEDROCK_AGENT_ID=your_agent_id
-BEDROCK_AGENT_ALIAS_ID=your_agent_alias_id
-BEDROCK_KNOWLEDGE_BASE_ID=your_knowledge_base_id
+BEDROCK_AGENT_CORE_GATEWAY_URL=https://your-gateway-url.amazonaws.com/mcp
+COGNITO_TOKEN_URL=https://your-domain.auth.region.amazoncognito.com/oauth2/token
+COGNITO_CLIENT_ID=your_client_id
+COGNITO_CLIENT_SECRET=your_client_secret
 PORT=5000
 ```
 
@@ -71,15 +71,44 @@ The application will be available at:
 
 ## Architecture
 
-- **Frontend**: React.js with component-based architecture
-- **Backend**: Express.js server with AWS SDK integration
-- **AWS Integration**: Bedrock Agent Runtime for query processing
-- **Content Parsing**: Basic multimodal content detection and rendering
+- **Frontend**: React.js with TypeScript, enhanced components with validation and accessibility
+- **Backend**: Express.js server with AgentCore Gateway integration and OAuth authentication
+- **AWS Integration**: Bedrock AgentCore Gateway → Lambda → Bedrock Agent flow
+- **Authentication**: Cognito OAuth with automatic token refresh
+- **Content Processing**: Advanced multimodal content parsing and rendering with error handling
+
+## Testing
+
+### API Testing
+For detailed API testing instructions, see [docs/API_TESTING.md](docs/API_TESTING.md)
+
+### Property-Based Testing
+Run comprehensive property-based tests:
+```bash
+# Frontend tests
+cd client
+npm run test:properties
+
+# Backend tests  
+cd server
+npm run test:properties
+```
 
 ## Next Steps
 
-- Enhance multimodal content parsing
-- Add authentication and user management
-- Implement advanced visualization components
-- Add error handling and retry logic
-- Configure production deployment
+- ✅ Enhanced QueryInterface with validation and UX improvements
+- ✅ Enhanced ContentViewer with multimodal rendering and fullscreen support
+- 🔄 Enhanced Session Manager with browser storage persistence
+- 🔄 Error Boundary and global error handling
+- 🔄 End-to-end integration testing
+- 🔄 Performance optimization and caching
+- 🔄 Production deployment configuration
+
+## Documentation
+
+- [API Testing Guide](docs/API_TESTING.md) - Detailed instructions for testing the AgentCore Gateway API
+- [Implementation Tasks](.kiro/specs/multimodal-content-viewer/tasks.md) - Systematic development tasks
+- [Design Document](.kiro/specs/multimodal-content-viewer/design.md) - Architecture and correctness properties
+- [Requirements](.kiro/specs/multimodal-content-viewer/requirements.md) - User stories and acceptance criteria
+
+
