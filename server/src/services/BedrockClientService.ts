@@ -1,7 +1,7 @@
 // Feature: multimodal-content-viewer
 // Enhanced Bedrock Client Service using Bedrock Agent Core Gateway
 
-import { QueryRequest, QueryResponse } from '@/types';
+import { QueryRequest, QueryResponse } from '../types';
 import { SessionManagerService } from './SessionManagerService';
 import { ErrorHandlerService } from './ErrorHandlerService';
 import { AuthService } from './AuthService';
@@ -105,11 +105,21 @@ export class BedrockClientService {
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
-        // Simplified request body - Lambda handles AWS configuration
+        // JSON-RPC format required by AgentCore Gateway
         const requestBody = {
-          sessionId,
-          inputText: query,
+          jsonrpc: "2.0",
+          id: `invoke_${Date.now()}`,
+          method: "tools/call",
+          params: {
+            name: "multimodal-agent___invoke_bedrock_agent",
+            arguments: {
+              inputText: query,
+              sessionId: sessionId
+            }
+          }
         };
+
+        console.log('Sending request to AgentCore Gateway:', JSON.stringify(requestBody, null, 2));
 
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -119,7 +129,12 @@ export class BedrockClientService {
         const token = await this.authService.getValidToken();
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
+          console.log('Using OAuth token:', token.substring(0, 20) + '...');
+        } else {
+          console.warn('No OAuth token available');
         }
+
+        console.log('Gateway URL:', this.gatewayUrl);
 
         const response = await fetch(this.gatewayUrl, {
           method: 'POST',
@@ -127,27 +142,45 @@ export class BedrockClientService {
           body: JSON.stringify(requestBody),
         });
 
+        console.log('Gateway response status:', response.status, response.statusText);
+
         if (!response.ok) {
-          throw new Error(`Bedrock Agent Core Gateway request failed: ${response.status} ${response.statusText}`);
+          const errorText = await response.text();
+          console.error('Gateway error response:', errorText);
+          throw new Error(`Bedrock Agent Core Gateway request failed: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
         const data = await response.json() as any;
+        console.log('Gateway response data:', JSON.stringify(data, null, 2));
         
-        // Handle different response formats from the gateway
-        if (data.body) {
-          // If response is wrapped in API Gateway format
-          const parsedBody = typeof data.body === 'string' ? JSON.parse(data.body) : data.body;
-          return parsedBody.response || parsedBody.content || parsedBody.output || JSON.stringify(parsedBody);
-        } else if (data.response || data.content || data.output) {
-          // Direct response format
-          return data.response || data.content || data.output;
-        } else {
-          // Fallback to entire response
-          return JSON.stringify(data);
+        // Handle JSON-RPC response format
+        if (data.error) {
+          console.error('JSON-RPC error:', data.error);
+          throw new Error(`Gateway error: ${data.error.message} (code: ${data.error.code})`);
         }
+        
+        if (data.result) {
+          // Extract content from JSON-RPC result
+          if (data.result.content && Array.isArray(data.result.content)) {
+            // Extract text content from the content array
+            const textContent = data.result.content
+              .filter((item: any) => item.type === 'text')
+              .map((item: any) => item.text)
+              .join('\n');
+            console.log('Extracted text content:', textContent);
+            return textContent || JSON.stringify(data.result);
+          }
+          console.log('Returning full result:', JSON.stringify(data.result));
+          return JSON.stringify(data.result);
+        }
+        
+        // Fallback to entire response
+        console.log('Fallback: returning entire response');
+        return JSON.stringify(data);
 
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
+        console.error(`Attempt ${attempt + 1} failed:`, lastError.message);
         
         if (attempt < this.maxRetries - 1) {
           const delay = this.calculateBackoffDelay(attempt);
