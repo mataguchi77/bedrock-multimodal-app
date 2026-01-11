@@ -97,3 +97,28 @@ export interface SessionManagerProps {
   onSessionChange: (sessionId: string) => void;
   currentSessionId?: string;
 }
+
+// Session Management Types
+export interface SessionData {
+  id: string;
+  createdAt: Date;
+  lastActivity: Date;
+  queryCount: number;
+  context: Record<string, any>;
+}
+
+export interface ConversationEntry {
+  id: string;
+  type: 'query' | 'response' | 'error';
+  content: string;
+  timestamp: Date;
+  sessionId: string;
+  metadata?: Record<string, any>;
+}
+
+export interface SessionManagerOptions {
+  autoCreateSession?: boolean;
+  persistConversation?: boolean;
+  maxConversationEntries?: number;
+  enableCleanup?: boolean;
+}

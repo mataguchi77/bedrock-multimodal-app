@@ -18,9 +18,9 @@ describe('Property 7: Content Parsing Completeness', () => {
     contentProcessor.clearCache();
   });
 
-  test('should identify text content correctly', () => {
-    fc.assert(
-      fc.property(
+  test('should identify text content correctly', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.array(fc.string({ minLength: 1, maxLength: 100 }), { minLength: 1, maxLength: 10 }),
         async (textLines) => {
           const input = textLines.join('\n');
@@ -43,9 +43,9 @@ describe('Property 7: Content Parsing Completeness', () => {
     );
   });
 
-  test('should identify image references correctly', () => {
-    fc.assert(
-      fc.property(
+  test('should identify image references correctly', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.array(
           fc.oneof(
             fc.constant('image: https://example.com/image.jpg'),
@@ -80,9 +80,9 @@ describe('Property 7: Content Parsing Completeness', () => {
     );
   });
 
-  test('should handle parsing failures gracefully', () => {
-    fc.assert(
-      fc.property(
+  test('should handle parsing failures gracefully', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.oneof(
           fc.constant(null),
           fc.constant(undefined),
@@ -112,9 +112,9 @@ describe('Property 7: Content Parsing Completeness', () => {
     );
   });
 
-  test('should maintain content positioning correctly', () => {
-    fc.assert(
-      fc.property(
+  test('should maintain content positioning correctly', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.array(
           fc.oneof(
             fc.string({ minLength: 1, maxLength: 50 }),
