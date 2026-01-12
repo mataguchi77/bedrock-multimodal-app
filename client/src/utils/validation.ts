@@ -1,7 +1,7 @@
 // Feature: multimodal-content-viewer
 // Frontend validation utilities
 
-import { ValidationResult } from '@/types';
+import { ValidationResult } from '../types';
 
 export function validateQueryInput(input: string): ValidationResult {
   // Check for empty or undefined input

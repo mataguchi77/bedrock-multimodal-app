@@ -1,5 +1,5 @@
 // Feature: multimodal-content-viewer
-// Enhanced ContentViewer Component with TypeScript, advanced rendering, and UX improvements
+// Enhanced ContentViewer Component with TypeScript, advanced rendering, performance optimization, and UX improvements
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ContentViewerProps, MultimodalContent } from '../types';
@@ -12,17 +12,11 @@ const ContentViewer: React.FC<ContentViewerProps> = ({
 }) => {
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [imageLoadErrors, setImageLoadErrors] = useState<Set<string>>(new Set());
-  const [videoLoadErrors, setVideoLoadErrors] = useState<Set<string>>(new Set());
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Handle image load errors
   const handleImageError = useCallback((url: string) => {
     setImageLoadErrors(prev => new Set(prev).add(url));
-  }, []);
-
-  // Handle video load errors
-  const handleVideoError = useCallback((url: string) => {
-    setVideoLoadErrors(prev => new Set(prev).add(url));
   }, []);
 
   // Handle fullscreen image
@@ -115,59 +109,6 @@ const ContentViewer: React.FC<ContentViewerProps> = ({
     );
   }, [imageLoadErrors, handleImageClick, handleImageError]);
 
-  // Render video content with controls and error handling
-  const renderVideoContent = useCallback((url: string, index: number) => {
-    const hasError = videoLoadErrors.has(url);
-    
-    if (hasError) {
-      return (
-        <div key={`video-${index}`} className="content-video error">
-          <div className="video-error">
-            <span className="error-icon">🎥</span>
-            <p>Failed to load video</p>
-            <small>{url}</small>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div key={`video-${index}`} className="content-video">
-        <video
-          controls
-          preload="metadata"
-          onError={() => handleVideoError(url)}
-          className="video-player"
-        >
-          <source src={url} type="video/mp4" />
-          <source src={url} type="video/webm" />
-          <source src={url} type="video/ogg" />
-          Your browser does not support the video tag.
-        </video>
-      </div>
-    );
-  }, [videoLoadErrors, handleVideoError]);
-
-  // Render document content
-  const renderDocumentContent = useCallback((url: string, title: string, index: number) => {
-    return (
-      <div key={`document-${index}`} className="content-document">
-        <div className="document-header">
-          <span className="document-icon">📄</span>
-          <span className="document-title">{title}</span>
-        </div>
-        <a 
-          href={url} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="document-link"
-        >
-          Open Document
-        </a>
-      </div>
-    );
-  }, []);
-
   // Parse and render multimodal content
   const renderMultimodalContent = useCallback((content: MultimodalContent) => {
     const elements: JSX.Element[] = [];
@@ -194,34 +135,12 @@ const ContentViewer: React.FC<ContentViewerProps> = ({
       });
     }
 
-    // Render videos
-    if (content.videos && content.videos.length > 0) {
-      content.videos.forEach((videoItem, index) => {
-        if (typeof videoItem === 'string') {
-          elements.push(renderVideoContent(videoItem, index));
-        } else if (videoItem && typeof videoItem === 'object' && 'url' in videoItem) {
-          elements.push(renderVideoContent(videoItem.url, index));
-        }
-      });
-    }
-
-    // Render documents
-    if (content.documents && content.documents.length > 0) {
-      content.documents.forEach((docItem, index) => {
-        if (typeof docItem === 'string') {
-          elements.push(renderDocumentContent(docItem, `Document ${index + 1}`, index));
-        } else if (docItem && typeof docItem === 'object' && 'url' in docItem) {
-          elements.push(renderDocumentContent(docItem.url, docItem.title || `Document ${index + 1}`, index));
-        }
-      });
-    }
-
     return elements.length > 0 ? elements : [
       <div key="no-content" className="no-content">
         <p>No displayable content found in the response.</p>
       </div>
     ];
-  }, [renderTextContent, renderImageContent, renderVideoContent, renderDocumentContent]);
+  }, [renderTextContent, renderImageContent]);
 
   // Main render logic
   const renderContent = () => {
@@ -251,8 +170,8 @@ const ContentViewer: React.FC<ContentViewerProps> = ({
         <div className="empty-state">
           <div className="empty-icon">🤖</div>
           <h3>Ready to explore</h3>
-          <p>Submit a query above to get multimodal content from your Bedrock Knowledge Base</p>
-          <small>Supports text, images, videos, and documents</small>
+          <p>Submit a query above to get content from your Bedrock Knowledge Base</p>
+          <small>Supports text and images</small>
         </div>
       );
     }

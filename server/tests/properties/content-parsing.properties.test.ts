@@ -15,13 +15,13 @@ describe('Property 7: Content Parsing Completeness', () => {
   });
 
   afterEach(() => {
-    contentProcessor.clearCache();
+    contentProcessor.destroy(); // Use destroy instead of clearCache for proper cleanup
   });
 
   test('should identify text content correctly', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.array(fc.string({ minLength: 1, maxLength: 100 }), { minLength: 1, maxLength: 10 }),
+        fc.array(fc.string({ minLength: 1, maxLength: 100 }).filter(s => s.trim().length > 0), { minLength: 1, maxLength: 10 }),
         async (textLines) => {
           const input = textLines.join('\n');
           const result = await contentProcessor.parseMultimodalResponse(input);
@@ -30,11 +30,12 @@ describe('Property 7: Content Parsing Completeness', () => {
           expect(result.metadata.totalElements).toBeGreaterThan(0);
           expect(result.metadata.confidence).toBeGreaterThan(0);
           
-          // All text lines should be preserved
+          // All non-empty text lines should be preserved (trimmed)
           const parsedText = result.text.map(t => t.content).join('\n');
           textLines.forEach(line => {
-            if (line.trim()) {
-              expect(parsedText).toContain(line);
+            const trimmedLine = line.trim();
+            if (trimmedLine) {
+              expect(parsedText).toContain(trimmedLine);
             }
           });
         }

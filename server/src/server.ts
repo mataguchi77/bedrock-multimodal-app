@@ -330,8 +330,13 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`AWS Region: ${process.env.AWS_REGION || 'not configured'}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`AWS Region: ${process.env.AWS_REGION || 'not configured'}`);
+  });
+}
+
+// Export app for testing
+export { app };

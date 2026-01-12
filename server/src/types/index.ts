@@ -18,8 +18,6 @@ export interface QueryResponse {
 export interface MultimodalContent {
   text: TextContent[];
   images: ImageContent[];
-  videos: VideoContent[];
-  documents: DocumentContent[];
   metadata: ContentMetadata;
 }
 
@@ -35,22 +33,8 @@ export interface ImageContent {
   caption?: string;
   dimensions?: { width: number; height: number };
   position: number;
-}
-
-export interface VideoContent {
-  url: string;
-  title?: string;
-  duration?: number;
-  thumbnail?: string;
-  position: number;
-}
-
-export interface DocumentContent {
-  url: string;
-  title: string;
-  type: 'pdf' | 'doc' | 'other';
-  size?: number;
-  position: number;
+  lazyLoad?: boolean;
+  loaded?: boolean;
 }
 
 export interface ContentMetadata {
@@ -58,6 +42,7 @@ export interface ContentMetadata {
   processingTime: number;
   source: string;
   confidence?: number;
+  cached?: boolean;
 }
 
 export interface Session {
@@ -85,8 +70,8 @@ export interface ErrorResponse {
 
 // Remove BedrockAgentResponse since we're using API Gateway
 export interface ContentElement {
-  type: 'text' | 'image' | 'video' | 'document';
-  content: TextContent | ImageContent | VideoContent | DocumentContent;
+  type: 'text' | 'image';
+  content: TextContent | ImageContent;
   position: number;
 }
 

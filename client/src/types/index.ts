@@ -18,8 +18,6 @@ export interface QueryResponse {
 export interface MultimodalContent {
   text?: (string | TextContent)[];
   images?: (string | ImageContent)[];
-  videos?: (string | VideoContent)[];
-  documents?: (string | DocumentContent)[];
   metadata?: ContentMetadata;
 }
 
@@ -37,22 +35,6 @@ export interface ImageContent {
   position: number;
 }
 
-export interface VideoContent {
-  url: string;
-  title?: string;
-  duration?: number;
-  thumbnail?: string;
-  position: number;
-}
-
-export interface DocumentContent {
-  url: string;
-  title: string;
-  type: 'pdf' | 'doc' | 'other';
-  size?: number;
-  position: number;
-}
-
 export interface ContentMetadata {
   totalElements: number;
   processingTime: number;
@@ -61,7 +43,7 @@ export interface ContentMetadata {
 }
 
 export interface ContentItem {
-  type: 'text' | 'image' | 'video' | 'document';
+  type: 'text' | 'image';
   content: string;
   url?: string;
   alt?: string;

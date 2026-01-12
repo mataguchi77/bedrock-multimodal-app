@@ -137,4 +137,54 @@ export class SessionManagerService {
     }
     this.sessions.clear();
   }
+
+  // Additional methods for property-based testing
+  resetAndCreateNewSession(forceCleanup: boolean = false): Session {
+    if (forceCleanup) {
+      this.sessions.clear();
+    }
+    return this.createSession();
+  }
+
+  getActiveSessionCount(): number {
+    return Array.from(this.sessions.values()).filter(
+      session => !this.isSessionExpired(session)
+    ).length;
+  }
+
+  getCurrentSession(): Session | null {
+    // Return the most recently active session
+    let mostRecent: Session | null = null;
+    let latestActivity = 0;
+
+    for (const session of this.sessions.values()) {
+      if (!this.isSessionExpired(session)) {
+        const activityTime = session.lastActivity.getTime();
+        if (activityTime > latestActivity) {
+          latestActivity = activityTime;
+          mostRecent = session;
+        }
+      }
+    }
+
+    return mostRecent;
+  }
+
+  setSystemConfiguration(config: Record<string, string>): void {
+    // Store system configuration (mock implementation)
+    (this as any).systemConfig = config;
+  }
+
+  getSystemConfiguration(): Record<string, string> {
+    return (this as any).systemConfig || {};
+  }
+
+  setUserPreferences(preferences: Record<string, any>): void {
+    // Store user preferences (mock implementation)
+    (this as any).userPreferences = preferences;
+  }
+
+  getUserPreferences(): Record<string, any> {
+    return (this as any).userPreferences || {};
+  }
 }
