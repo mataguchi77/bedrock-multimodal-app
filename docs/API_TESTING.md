@@ -16,7 +16,7 @@ This document provides step-by-step instructions for testing and verifying your 
 Use PowerShell to obtain an OAuth token from Cognito:
 
 ```powershell
-$response = Invoke-RestMethod -Uri "https://my-domain-aplb3hxq.auth.ap-northeast-1.amazoncognito.com/oauth2/token" -Method POST -Headers @{"Content-Type"="application/x-www-form-urlencoded"} -Body "grant_type=client_credentials&client_id=5qknid8ddu8995tkdgoavvinde&client_secret=1ojsj0r07lju99lbr1n756kud862f5q7so4basi57kjdg2i1nkmd"
+$response = Invoke-RestMethod -Uri "COGNITO_TOKEN_URL" -Method POST -Headers @{"Content-Type"="application/x-www-form-urlencoded"} -Body "grant_type=client_credentials&client_id=CLIENT-ID&client_secret=YOUR-SECRET"
 $MYTOKEN = $response.access_token
 ```
 
@@ -42,7 +42,7 @@ $body = @{
     }
 } | ConvertTo-Json -Depth 4
 
-$response = Invoke-RestMethod -Uri "https://multimodal-agent-mkimw46b0u.gateway.bedrock-agentcore.ap-northeast-1.amazonaws.com/mcp" -Method POST -Headers $headers -Body $body
+$response = Invoke-RestMethod -Uri "BEDROCK_AGENT_CORE_GATEWAY_URL" -Method POST -Headers $headers -Body $body
 
 # Display the full response content
 Write-Host "=== Full API Response ===" -ForegroundColor Green
