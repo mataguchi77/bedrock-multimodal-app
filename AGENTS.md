@@ -203,10 +203,10 @@ The application leverages multiple AI agents and services to provide intelligent
 
 ## Development and Testing
 
-### 1. Property-Based Testing
-- **Agent Behavior Validation**: Automated testing of agent responses
-- **Error Scenario Testing**: Comprehensive error condition testing
-- **Performance Testing**: Load testing and performance validation
+### 1. Unit Testing
+- **Service Testing**: Automated testing of service functionality
+- **Component Testing**: UI component behavior validation
+- **Integration Testing**: End-to-end workflow testing
 
 ### 2. Integration Testing
 - **End-to-End Flows**: Complete user journey testing

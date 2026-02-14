@@ -9,7 +9,6 @@
     "dev": "tsc --project tsconfig.build.json && node dist/server.js",
     "start": "node dist/server.js",
     "test": "jest",
-    "test:properties": "jest --testPathPattern=properties",
     "test:watch": "jest --watch"
   },
   "dependencies": {

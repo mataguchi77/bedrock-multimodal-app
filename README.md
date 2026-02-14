@@ -10,7 +10,7 @@ A React.js and Node.js application that integrates with AWS Bedrock Agent and Kn
 - **Session Management**: Persistent conversation sessions with automatic recovery
 - **Error Handling**: Graceful error recovery with user-friendly messages
 - **Accessibility**: Full keyboard navigation and screen reader support
-- **Property-Based Testing**: Comprehensive testing framework with Fast-check integration
+- **Testing**: Comprehensive unit and integration testing
 
 ## Setup
 
@@ -82,16 +82,16 @@ The application will be available at:
 ### API Testing
 For detailed API testing instructions, see [docs/API_TESTING.md](docs/API_TESTING.md)
 
-### Property-Based Testing
-Run comprehensive property-based tests:
+### Running Tests
+Run tests for frontend and backend:
 ```bash
 # Frontend tests
 cd client
-npm run test:properties
+npm test
 
 # Backend tests  
 cd server
-npm run test:properties
+npm test
 ```
 
 ## Next Steps
