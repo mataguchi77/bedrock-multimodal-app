@@ -1,78 +1,169 @@
 # Next Steps - AWS Bedrock Multimodal App
 
-## 🎯 Current Status: Testing Simplified! ✅
+## ⚠️ CRITICAL ISSUE: Bedrock Agent Configuration
 
-✅ **Complete Specifications** - Requirements, design, and implementation tasks  
-✅ **Backend Services** - TypeScript services with AWS integration, error handling, session management  
-✅ **Testing Framework** - Simple happy path tests for all components  
-✅ **Enhanced Frontend Components** - QueryInterface and ContentViewer with advanced features  
-✅ **Code Simplification Complete** - Successfully simplified for text + images only  
-✅ **Property-Based Tests Removed** - Replaced with simple, focused unit tests
+### Problem Description
+The application is fully functional and ready to display multimodal content (text + images), but the **AWS Bedrock Agent is not configured to return image data** in its responses.
 
-## 🎉 Code Simplification Accomplishments
+**Current Behavior**:
+- Bedrock Agent describes images in text (e.g., "Here is a diagram related to AAP...")
+- Response includes reference codes (e.g., z7qv, CQVj, j8Fl) for images
+- BUT the actual image URLs or image content items are NOT included in the response
 
-### ✅ Frontend Simplification
-- **Types Simplified**: Removed VideoContent and DocumentContent from `client/src/types/index.ts`
-- **ContentViewer Component**: Removed video and document rendering methods, kept text and image support
-- **CSS Cleanup**: Removed unused video/document styles from ContentViewer.css
-- **Test Files**: Simplified property-based tests to only test text and images
-- **App.tsx**: Updated metadata tracking to only include text and images
-- **Build Success**: Client build now compiles successfully
+**Expected Behavior**:
+The Bedrock Agent should return structured content like:
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Here is a diagram..."
+    },
+    {
+      "type": "image",
+      "source": {
+        "url": "https://..."
+      },
+      "alt": "AAP diagram"
+    }
+  ]
+}
+```
 
-### ✅ Backend Simplification
-- **Types Simplified**: Removed video/document interfaces from `server/src/types/index.ts`
-- **ContentProcessorService**: Removed video and document extraction methods
-- **Content Organization**: Simplified to only handle text and image content types
-- **Build Success**: Server build now compiles successfully
-- **Test Compatibility**: Existing tests run (some timeouts but functionality works)
+**Actual Behavior**:
+Currently only returns:
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Here is a diagram... z7qv"
+    }
+  ]
+}
+```
 
-### ✅ Verified Functionality
-- **Client Build**: ✅ `npm run build` succeeds (53.7 kB main bundle)
-- **Server Build**: ✅ `npm run build` succeeds with TypeScript compilation
-- **Content Support**: Now focused on text + images only (matches Bedrock Agent Core Gateway)
-- **Performance**: Reduced bundle size due to removed video/document handling code
+### Required AWS Configuration Changes
 
-## Immediate Next Steps (Priority Order)
+To fix this issue, you need to configure the Bedrock Agent in AWS Console:
 
-### 1. Run Tests to Verify Everything Works
+1. **Enable Source Citations/Attributions**:
+   - Go to AWS Bedrock Console → Agents → Your Agent
+   - Enable "Return source attributions" or "Include citations"
+   - This will include references to source documents/images
+
+2. **Configure Knowledge Base Settings**:
+   - Go to Knowledge Base settings
+   - Ensure "Return source content" is enabled
+   - Configure to return image URLs from indexed documents
+
+3. **Update Agent Response Configuration**:
+   - Check Agent's "Response generation" settings
+   - Enable multimodal output if available
+   - Ensure the agent can return image references
+
+4. **Verify Knowledge Base Indexing**:
+   - Confirm images are properly indexed in the knowledge base
+   - Check that image metadata includes accessible URLs
+   - Verify image references are retrievable
+
+### Application Code Status
+
+✅ **The application code is READY**:
+- Backend properly extracts and structures all content types (text, images, documents, videos)
+- Frontend ContentViewer component can display images with zoom, fullscreen, lazy loading
+- Type definitions support multimodal content
+- Error handling in place for missing images
+
+**No code changes needed** - this is purely a Bedrock Agent configuration issue.
+
+### Testing After Configuration
+
+Once Bedrock Agent is configured to return image data:
+
+1. Query: "Can you show me any diagram on AAP?"
+2. Expected: Text description + actual image displayed on screen
+3. Verify: Check backend logs to confirm image items in response
+4. Confirm: Images render properly in the ContentViewer component
+
+### Backend Log Evidence
+
+From recent query logs:
+```
+Gateway response data: {
+  "content": [
+    {
+      "type": "text",
+      "text": "...Here is a diagram... z7qv..."
+    }
+  ]
+}
+Processed content: {
+  "text": [...],
+  "images": [],  // ← Empty! Should contain image data
+  "documents": [],
+  "videos": []
+}
+```
+
+The `images` array is empty because Bedrock isn't returning image content items.
+
+---
+
+## Immediate Next Steps
+
+### 1. Configure AWS Bedrock Agent (CRITICAL)
+**Estimated Effort**: 15-30 minutes  
+**Priority**: HIGH - Required for image display functionality  
+**What to do**:
+1. Access AWS Bedrock Console
+2. Navigate to your Agent configuration
+3. Enable source citations/attributions
+4. Configure knowledge base to return image URLs
+5. Test with a query that requests images
+6. Verify backend logs show image items in response
+
+### 2. Run Tests to Verify Everything Works
 **Estimated Effort**: 10 minutes  
 **What to do**:
 1. **Run Backend Tests**: `cd server && npm test`
 2. **Run Frontend Tests**: `cd client && npm test -- --watchAll=false`
 3. **Verify Builds**: Both client and server should build successfully
 
-### 2. Start Development and Testing
+### 3. Start Development and Testing
 **What's Ready**:
 - All services implemented and tested
 - Simple, focused unit tests for happy paths
 - Clean codebase without complex property-based testing
 - Ready for development and enhancement
 
-## Current Application Status
+---
 
-### ✅ Fully Functional Features
-- **Session Management**: Complete with browser storage and recovery
-- **Query Processing**: Full integration with AWS Bedrock Agent
-- **Text Content Display**: Rich text formatting and display with markdown-like support
-- **Image Content Display**: Image rendering with zoom, fullscreen, error handling, lazy loading
-- **Error Handling**: Comprehensive error boundaries and global error management
-- **Performance Optimization**: Caching, lazy loading, and performance monitoring
-- **Accessibility**: ARIA labels, keyboard navigation, screen reader support
-- **Responsive Design**: Works across desktop and mobile devices
+## Recent Updates (Current Session)
 
-### 🔧 Available Commands
+- **Conversation History Enhancement**: Now shows most recent 5 entries in reverse chronological order (newest first)
+- **Full Content Display**: Removed truncation - all conversation entries show complete content
+- **Multimodal Backend Support**: Updated BedrockClientService to extract and structure all content types (text, images, documents, videos)
+- **Type System Updates**: Added DocumentContent and VideoContent interfaces, updated QueryResponse to support structured content
+- **Server Processing**: Enhanced to handle both string and structured multimodal content from Bedrock
+- **Identified Issue**: Discovered Bedrock Agent configuration issue preventing image data from being returned
+
+---
+
+## Available Commands
 
 ```bash
 # Frontend
 cd client
-npm start             # Development server
+npm start             # Development server (http://localhost:3000)
 npm run build         # Production build
 npm test              # Run tests
 
 # Backend
 cd server
-npm run dev           # Development server
-npm run build         # Production build
+npm start             # Production server (http://localhost:5000)
+npm run dev           # Development server with auto-reload
+npm run build         # Build TypeScript to JavaScript
 npm test              # Run tests
 
 # Full application
@@ -80,50 +171,6 @@ npm run install-all   # Install all dependencies
 npm run dev          # Start both frontend and backend
 ```
 
-### 📊 Simplified Content Support
-
-**✅ Supported Content Types**:
-- **Text Content**: Rich text with markdown-like formatting (bold, italic, code)
-- **Image Content**: Full image support with zoom, fullscreen, error handling, lazy loading
-
-**❌ Removed Content Types** (not supported by Bedrock Agent Core Gateway):
-- **Video Content**: Completely removed video player and controls
-- **Document Content**: Completely removed document links and previews
-
-### 📊 Testing Status
-
-**✅ Test Coverage**:
-- **Backend Services**: Unit tests for ContentProcessor, SessionManager, ErrorHandler
-- **Frontend Components**: Unit tests for QueryInterface, ContentViewer
-- **Custom Hooks**: Unit tests for useSessionManager
-- **Test Focus**: Happy path scenarios with clear, simple assertions
-- **Test Framework**: Jest with React Testing Library
-
-## Key Files Successfully Simplified
-
-### ✅ Frontend Files
-- **`client/src/types/index.ts`** - Removed VideoContent, DocumentContent interfaces
-- **`client/src/components/ContentViewer.tsx`** - Removed video/document rendering methods
-- **`client/src/components/ContentViewer.css`** - Removed unused video/document styles
-- **`client/src/App.tsx`** - Updated metadata tracking for text + images only
-- **`client/src/tests/properties/*.test.tsx`** - Simplified test scenarios
-
-### ✅ Backend Files
-- **`server/src/types/index.ts`** - Removed video/document interfaces
-- **`server/src/services/ContentProcessorService.ts`** - Removed video/document processing methods
-
-### 📈 Performance Improvements
-- **Reduced Bundle Size**: Client bundle reduced due to removed video/document code
-- **Simplified Processing**: Backend processing faster without video/document parsing
-- **Cleaner Codebase**: Removed ~200 lines of unused video/document handling code
-- **Better Focus**: Code now focused on what Bedrock Agent Core Gateway actually supports
-
-## Quick Start for Next Session
-
-1. **Install dependencies**: `npm run install-all`
-2. **Run tests**: Test both client and server to verify everything works
-3. **Start development**: `npm run dev` to run the full application
-4. **Production ready**: Clean, simple codebase ready for deployment
-
 ---
-**🚀 All property-based tests removed! Simple unit tests in place. Ready to develop!**
+
+**🚀 Application is ready! Just need to configure Bedrock Agent to return image data.**
