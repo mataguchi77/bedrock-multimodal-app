@@ -161,7 +161,7 @@ const SessionManager: React.FC<SessionManagerProps> = ({
             </summary>
             
             <div className="conversation-list">
-              {conversationHistory.slice(-5).map((entry) => (
+              {conversationHistory.slice(-5).reverse().map((entry) => (
                 <div key={entry.id} className={`conversation-entry ${entry.type}`}>
                   <div className="entry-header">
                     <span className="entry-type">{entry.type}</span>
@@ -170,17 +170,14 @@ const SessionManager: React.FC<SessionManagerProps> = ({
                     </span>
                   </div>
                   <div className="entry-content">
-                    {entry.content.length > 100 
-                      ? `${entry.content.substring(0, 100)}...`
-                      : entry.content
-                    }
+                    {entry.content}
                   </div>
                 </div>
               ))}
               
               {conversationHistory.length > 5 && (
                 <div className="conversation-more">
-                  ... and {conversationHistory.length - 5} more entries
+                  ... and {conversationHistory.length - 5} older entries
                 </div>
               )}
             </div>

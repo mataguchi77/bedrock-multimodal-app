@@ -104,7 +104,7 @@ function App() {
     addToConversation(queryEntry);
     
     try {
-      const response = await measurePerformance('API Query', async () => {
+      const data = await measurePerformance('API Query', async () => {
         const apiResponse = await fetch('/api/invoke-agent', {
           method: 'POST',
           headers: {
@@ -118,31 +118,31 @@ function App() {
           signal: AbortSignal.timeout(30000) // 30 seconds
         });
 
-        if (!response.ok) {
+        if (!apiResponse.ok) {
           throw apiResponse;
         }
 
         return apiResponse.json();
       });
 
-      const data: QueryResponse = response;
+      const queryResponse: QueryResponse = data;
       
-      if (data.success) {
-        setContent(data.content || null);
+      if (queryResponse.success) {
+        setContent(queryResponse.content || null);
         setError(null);
         
         // Cache the successful response
-        cacheResponse(cacheKey, data, { ttl: 5 * 60 * 1000 }); // 5 minutes
+        cacheResponse(cacheKey, queryResponse, { ttl: 5 * 60 * 1000 }); // 5 minutes
         
         // Preload critical resources
-        if (data.content) {
-          preloadCriticalResources(data.content).catch(error => {
+        if (queryResponse.content) {
+          preloadCriticalResources(queryResponse.content).catch(error => {
             console.warn('Failed to preload resources:', error);
           });
         }
         
         // Add successful response to conversation history
-        const responseContent = data.content?.text?.[0];
+        const responseContent = queryResponse.content?.text?.[0];
         const responseText = typeof responseContent === 'string' 
           ? responseContent 
           : responseContent?.content || 'Response received';
@@ -152,12 +152,12 @@ function App() {
           type: 'response',
           content: responseText,
           timestamp: new Date(),
-          sessionId: data.sessionId,
+          sessionId: queryResponse.sessionId,
           metadata: { 
-            processingTime: data.processingTime,
+            processingTime: queryResponse.processingTime,
             contentTypes: {
-              text: data.content?.text?.length || 0,
-              images: data.content?.images?.length || 0
+              text: queryResponse.content?.text?.length || 0,
+              images: queryResponse.content?.images?.length || 0
             }
           }
         };
@@ -167,13 +167,13 @@ function App() {
         updateSession({
           context: {
             lastQuery: query,
-            lastResponse: data.content,
-            lastProcessingTime: data.processingTime
+            lastResponse: queryResponse.content,
+            lastProcessingTime: queryResponse.processingTime
           }
         });
       } else {
-        console.error('Query failed:', data.error);
-        const errorMessage = data.error || 'Unknown error occurred';
+        console.error('Query failed:', queryResponse.error);
+        const errorMessage = queryResponse.error || 'Unknown error occurred';
         
         const errorDetails = handleApiError(
           new Error(errorMessage),

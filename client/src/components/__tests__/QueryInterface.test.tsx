@@ -22,7 +22,7 @@ describe('QueryInterface - Happy Path', () => {
     );
 
     expect(screen.getByRole('textbox')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /query agent/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /submit query/i })).toBeInTheDocument();
   });
 
   it('should accept text input', async () => {
@@ -54,9 +54,9 @@ describe('QueryInterface - Happy Path', () => {
     );
 
     const textarea = screen.getByRole('textbox');
-    const submitButton = screen.getByRole('button', { name: /query agent/i });
-
     await user.type(textarea, 'Test query');
+    
+    const submitButton = screen.getByRole('button', { name: /submit query/i });
     await user.click(submitButton);
 
     expect(mockOnSubmit).toHaveBeenCalledWith('Test query');
@@ -96,7 +96,7 @@ describe('QueryInterface - Happy Path', () => {
     const textarea = screen.getByRole('textbox');
     await user.type(textarea, 'Hello');
 
-    expect(screen.getByText(/5.*character/i)).toBeInTheDocument();
+    expect(screen.getByText('5/2000')).toBeInTheDocument();
   });
 
   it('should disable submit button when loading', () => {
@@ -154,9 +154,9 @@ describe('QueryInterface - Happy Path', () => {
     );
 
     const textarea = screen.getByRole('textbox');
-    const submitButton = screen.getByRole('button', { name: /query agent/i });
-
     await user.type(textarea, '  Test query  ');
+    
+    const submitButton = screen.getByRole('button', { name: /submit query/i });
     await user.click(submitButton);
 
     expect(mockOnSubmit).toHaveBeenCalledWith('Test query');

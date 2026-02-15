@@ -241,7 +241,8 @@ export function useSessionManager(options: SessionManagerOptions = {}): UseSessi
       setConversationHistory(trimmed);
       saveConversationToStorage(trimmed);
     }
-  }, [sessionData, conversationHistory, maxConversationEntries, resetSession, saveConversationToStorage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionData, conversationHistory.length, maxConversationEntries]);
 
   // Initialize session manager
   useEffect(() => {
@@ -273,7 +274,8 @@ export function useSessionManager(options: SessionManagerOptions = {}): UseSessi
         clearInterval(cleanupIntervalRef.current);
       }
     };
-  }, [loadSessionFromStorage, loadConversationFromStorage, autoCreateSession, createNewSession, enableCleanup, performCleanup]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   // Handle page visibility change (cleanup on tab close)
   useEffect(() => {

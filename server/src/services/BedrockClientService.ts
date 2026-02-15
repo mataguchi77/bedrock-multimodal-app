@@ -49,20 +49,21 @@ export class BedrockClientService {
       // Validate configuration
       await this.validateConfiguration();
 
-      // Get or create session
-      const sessionId = request.sessionId || this.sessionManager.createSession().id;
-      const session = this.sessionManager.getSession(sessionId);
+      // For first request without sessionId, let Bedrock create the session
+      // For subsequent requests, use the provided sessionId
+      let sessionId: string = request.sessionId || '';
+      let session = sessionId ? this.sessionManager.getSession(sessionId) : null;
       
+      // If no session exists locally, create one
       if (!session) {
-        throw this.errorHandler.createError(
-          'SESSION_ERROR',
-          'Invalid session ID',
-          new Error(`Session ${sessionId} not found`)
-        );
+        const newSession = this.sessionManager.createSession();
+        sessionId = newSession.id;
+        session = newSession;
       }
 
       // Invoke Bedrock Agent via Core Gateway with retry logic
-      const response = await this.invokeWithRetry(request.query, sessionId);
+      // Note: For first call, we may not send sessionId to let Bedrock create it
+      const response = await this.invokeWithRetry(request.query, sessionId, !request.sessionId);
       
       // Update session
       this.sessionManager.updateSession(sessionId, {
@@ -73,8 +74,9 @@ export class BedrockClientService {
       return {
         success: true,
         content: response,
-        sessionId,
-        timestamp: new Date()
+        sessionId: sessionId,
+        timestamp: new Date(),
+        processingTime: Date.now() - startTime
       };
 
     } catch (error) {
@@ -100,22 +102,29 @@ export class BedrockClientService {
     }
   }
 
-  private async invokeWithRetry(query: string, sessionId: string): Promise<string> {
+  private async invokeWithRetry(query: string, sessionId: string, isFirstCall: boolean = false): Promise<any> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
         // JSON-RPC format required by AgentCore Gateway
+        const requestArguments: any = {
+          inputText: query
+        };
+        
+        // Only include sessionId if it's not the first call
+        // Let Bedrock create the session on first call
+        if (!isFirstCall && sessionId) {
+          requestArguments.sessionId = sessionId;
+        }
+        
         const requestBody = {
           jsonrpc: "2.0",
           id: `invoke_${Date.now()}`,
           method: "tools/call",
           params: {
             name: "multimodal-agent___invoke_bedrock_agent",
-            arguments: {
-              inputText: query,
-              sessionId: sessionId
-            }
+            arguments: requestArguments
           }
         };
 
@@ -162,13 +171,67 @@ export class BedrockClientService {
         if (data.result) {
           // Extract content from JSON-RPC result
           if (data.result.content && Array.isArray(data.result.content)) {
-            // Extract text content from the content array
-            const textContent = data.result.content
-              .filter((item: any) => item.type === 'text')
-              .map((item: any) => item.text)
-              .join('\n');
-            console.log('Extracted text content:', textContent);
-            return textContent || JSON.stringify(data.result);
+            // Process all content items (text, images, etc.)
+            const processedContent: any = {
+              text: [],
+              images: [],
+              documents: [],
+              videos: []
+            };
+            
+            data.result.content.forEach((item: any) => {
+              if (item.type === 'text') {
+                let text = item.text;
+                
+                // Try to parse if it looks like JSON
+                if (typeof text === 'string' && text.trim().startsWith('{')) {
+                  try {
+                    const parsed = JSON.parse(text);
+                    
+                    // Check for nested body structure (Lambda response format)
+                    if (parsed.statusCode && parsed.body) {
+                      const bodyParsed = JSON.parse(parsed.body);
+                      if (bodyParsed.response) {
+                        text = bodyParsed.response.trim();
+                      }
+                    }
+                    
+                    // Check for direct response field
+                    if (parsed.response) {
+                      text = parsed.response.trim();
+                    }
+                  } catch (e) {
+                    // If parsing fails, use original text
+                    console.log('Could not parse nested JSON, using original text');
+                  }
+                }
+                
+                processedContent.text.push(text);
+              } else if (item.type === 'image') {
+                // Handle image content
+                processedContent.images.push({
+                  url: item.source?.url || item.url,
+                  alt: item.alt || 'Image from Bedrock',
+                  caption: item.caption
+                });
+              } else if (item.type === 'document') {
+                // Handle document content
+                processedContent.documents.push({
+                  url: item.source?.url || item.url,
+                  title: item.title || 'Document',
+                  type: item.documentType || 'unknown'
+                });
+              }
+            });
+            
+            console.log('Processed content:', JSON.stringify(processedContent, null, 2));
+            
+            // Return structured content if we have multiple types, otherwise just text
+            if (processedContent.images.length > 0 || processedContent.documents.length > 0 || processedContent.videos.length > 0) {
+              return processedContent;
+            } else {
+              return processedContent.text.join('\n');
+            }
           }
           console.log('Returning full result:', JSON.stringify(data.result));
           return JSON.stringify(data.result);

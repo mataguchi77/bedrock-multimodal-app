@@ -9,16 +9,33 @@ export interface QueryRequest {
 
 export interface QueryResponse {
   success: boolean;
-  content?: string;
+  content?: string | MultimodalContent;
   sessionId: string;
   error?: string;
   timestamp: Date;
+  processingTime?: number;
 }
 
 export interface MultimodalContent {
   text: TextContent[];
   images: ImageContent[];
+  documents?: DocumentContent[];
+  videos?: VideoContent[];
   metadata: ContentMetadata;
+}
+
+export interface DocumentContent {
+  url: string;
+  title: string;
+  type: string;
+  position?: number;
+}
+
+export interface VideoContent {
+  url: string;
+  title?: string;
+  thumbnail?: string;
+  position?: number;
 }
 
 export interface TextContent {

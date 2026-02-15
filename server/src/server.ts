@@ -182,11 +182,20 @@ app.post('/api/invoke-agent', validateInvokeAgentRequest, async (req: Request, r
     const response = await bedrockClient.invokeAgent(request);
     
     if (response.success && response.content) {
-      // Process the content through the content processor
-      const processedContent = await contentProcessor.parseMultimodalResponse(
-        String(response.content),
-        'bedrock-agent'
-      );
+      // Check if content is already structured (has text/images/etc properties)
+      let processedContent;
+      
+      if (typeof response.content === 'object' && 
+          (response.content.text || response.content.images || response.content.documents)) {
+        // Content is already structured from BedrockClientService
+        processedContent = response.content;
+      } else {
+        // Process the content through the content processor
+        processedContent = await contentProcessor.parseMultimodalResponse(
+          String(response.content),
+          'bedrock-agent'
+        );
+      }
       
       // Return structured response
       res.json({
@@ -194,7 +203,7 @@ app.post('/api/invoke-agent', validateInvokeAgentRequest, async (req: Request, r
         content: processedContent,
         sessionId: response.sessionId,
         timestamp: response.timestamp,
-        processingTime: Date.now() - startTime
+        processingTime: response.processingTime || (Date.now() - startTime)
       });
     } else {
       // Return error response

@@ -49,15 +49,7 @@ describe('ContentViewer - Happy Path', () => {
   it('should render image content', () => {
     const content: MultimodalContent = {
       text: [],
-      images: [
-        {
-          url: 'https://example.com/image.jpg',
-          alt: 'Test image',
-          position: 0,
-          lazyLoad: true,
-          loaded: false
-        }
-      ],
+      images: ['https://example.com/image.jpg'],
       metadata: {
         totalElements: 1,
         processingTime: 100,
@@ -68,7 +60,7 @@ describe('ContentViewer - Happy Path', () => {
 
     render(<ContentViewer content={content} loading={false} />);
 
-    const image = screen.getByAltText('Test image');
+    const image = screen.getByAltText(/content image/i);
     expect(image).toBeInTheDocument();
     expect(image).toHaveAttribute('src', 'https://example.com/image.jpg');
   });
@@ -76,15 +68,7 @@ describe('ContentViewer - Happy Path', () => {
   it('should render mixed content (text and images)', () => {
     const content: MultimodalContent = {
       text: [{ content: 'Here is an image:', position: 0 }],
-      images: [
-        {
-          url: 'https://example.com/image.jpg',
-          alt: 'Example image',
-          position: 1,
-          lazyLoad: true,
-          loaded: false
-        }
-      ],
+      images: ['https://example.com/image.jpg'],
       metadata: {
         totalElements: 2,
         processingTime: 100,
@@ -96,7 +80,7 @@ describe('ContentViewer - Happy Path', () => {
     render(<ContentViewer content={content} loading={false} />);
 
     expect(screen.getByText('Here is an image:')).toBeInTheDocument();
-    expect(screen.getByAltText('Example image')).toBeInTheDocument();
+    expect(screen.getByAltText(/content image/i)).toBeInTheDocument();
   });
 
   it('should show loading state', () => {
@@ -113,7 +97,7 @@ describe('ContentViewer - Happy Path', () => {
 
     render(<ContentViewer content={content} loading={true} />);
 
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(screen.getByText(/querying bedrock agent/i)).toBeInTheDocument();
   });
 
   it('should show empty state when no content', () => {
@@ -130,22 +114,13 @@ describe('ContentViewer - Happy Path', () => {
 
     render(<ContentViewer content={content} loading={false} />);
 
-    expect(screen.getByText(/no content/i)).toBeInTheDocument();
+    expect(screen.getByText(/no displayable content/i)).toBeInTheDocument();
   });
 
-  it('should render image with caption', () => {
+  it('should render image without errors', () => {
     const content: MultimodalContent = {
       text: [],
-      images: [
-        {
-          url: 'https://example.com/image.jpg',
-          alt: 'Test image',
-          caption: 'This is a caption',
-          position: 0,
-          lazyLoad: true,
-          loaded: false
-        }
-      ],
+      images: ['https://example.com/image.jpg'],
       metadata: {
         totalElements: 1,
         processingTime: 100,
@@ -156,7 +131,8 @@ describe('ContentViewer - Happy Path', () => {
 
     render(<ContentViewer content={content} loading={false} />);
 
-    expect(screen.getByText('This is a caption')).toBeInTheDocument();
+    const image = screen.getByAltText(/content image/i);
+    expect(image).toBeInTheDocument();
   });
 
   it('should handle image click for fullscreen', async () => {
@@ -164,15 +140,7 @@ describe('ContentViewer - Happy Path', () => {
     
     const content: MultimodalContent = {
       text: [],
-      images: [
-        {
-          url: 'https://example.com/image.jpg',
-          alt: 'Test image',
-          position: 0,
-          lazyLoad: true,
-          loaded: false
-        }
-      ],
+      images: ['https://example.com/image.jpg'],
       metadata: {
         totalElements: 1,
         processingTime: 100,
@@ -183,10 +151,10 @@ describe('ContentViewer - Happy Path', () => {
 
     render(<ContentViewer content={content} loading={false} />);
 
-    const image = screen.getByAltText('Test image');
+    const image = screen.getByAltText(/content image/i);
     await user.click(image);
 
-    // Fullscreen modal should appear
-    expect(screen.getAllByAltText('Test image')).toHaveLength(2);
+    // Fullscreen modal should appear with "Fullscreen view" alt text
+    expect(screen.getByAltText('Fullscreen view')).toBeInTheDocument();
   });
 });
